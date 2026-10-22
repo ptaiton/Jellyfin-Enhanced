@@ -383,7 +383,7 @@
       "category": "Services"
     },
     {
-      "path": "Jellyfin.Plugin.JellyfinEnhanced/Services/MediaForgeProviderFilter.cs",
+      "path": "Jellyfin.Plugin.JellyfinEnhanced/Services/MediaForgeProviderStartupFilter.cs",
       "category": "Services"
     },
     {

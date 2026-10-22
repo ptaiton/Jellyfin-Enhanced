@@ -1,29 +1,43 @@
 using System.Net.Http.Headers;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 
 namespace Jellyfin.Plugin.JellyfinEnhanced.Services;
 
-/// <summary>Use the existing Enhanced request/discovery UI with MediaForge as its provider.</summary>
-public sealed class MediaForgeProviderFilter : IAsyncResourceFilter
+/// <summary>Route native Enhanced requests before MVC, including on hosts that
+/// construct their MVC options before plugin service registration. MediaForge
+/// validates every forwarded Jellyfin token; this does not rely on an already
+/// authenticated principal or forward any server credential.</summary>
+public sealed class MediaForgeProviderStartupFilter : IStartupFilter
 {
-    public async Task OnResourceExecutionAsync(ResourceExecutingContext context, ResourceExecutionDelegate next)
+    public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next) => app =>
+    {
+        app.Use(InvokeAsync);
+        next(app);
+    };
+
+    internal static async Task InvokeAsync(HttpContext context, Func<Task> next)
     {
         var config = JellyfinEnhanced.Instance?.Configuration;
-        var path = context.HttpContext.Request.Path.Value ?? "";
+        var path = context.Request.Path.Value ?? "";
+        // Startup filters run before Jellyfin's BaseUrl/authentication middleware.
+        // Match the routed suffix, then let MediaForge verify the personal token.
+        var prefix = path.IndexOf("/JellyfinEnhanced/", StringComparison.OrdinalIgnoreCase);
+        if (prefix < 0) { await next(); return; }
+        path = path[prefix..];
         var native = path.StartsWith("/JellyfinEnhanced/jellyseerr/", StringComparison.OrdinalIgnoreCase)
             || (path.StartsWith("/JellyfinEnhanced/arr/", StringComparison.OrdinalIgnoreCase)
                 && !path.Equals("/JellyfinEnhanced/arr/calendar/user-data", StringComparison.OrdinalIgnoreCase));
         if (path.Equals("/JellyfinEnhanced/jellyseerr/sync-watchlist", StringComparison.OrdinalIgnoreCase)) native=false;
         if (config?.MediaForgeEnabled != true || !native) { await next(); return; }
-        var request = context.HttpContext.Request;
-        if (context.HttpContext.User.Identity?.IsAuthenticated != true) { context.Result = new UnauthorizedResult(); return; }
+        var request = context.Request;
         var token = request.Headers["X-Emby-Token"].ToString();
-        if (string.IsNullOrEmpty(token) || token.Length > 4096) { context.Result = new UnauthorizedResult(); return; }
+        if (string.IsNullOrEmpty(token) || token.Length > 4096) { context.Response.StatusCode = 401; await context.Response.WriteAsJsonAsync(new { error = "A Jellyfin user session is required." }); return; }
         if (!Uri.TryCreate(config.MediaForgeUrl.TrimEnd('/') + "/", UriKind.Absolute, out var root)
             || root.Scheme is not ("http" or "https") || root.UserInfo.Length > 0 || root.Query.Length > 0 || root.Fragment.Length > 0)
-        { context.Result = new ObjectResult(new { error = "MediaForge URL is invalid." }) { StatusCode = 503 }; return; }
-        if (request.ContentLength > 65536) { context.Result = new StatusCodeResult(413); return; }
+        { context.Response.StatusCode = 503; await context.Response.WriteAsJsonAsync(new { error = "MediaForge URL is invalid." }); return; }
+        if (request.ContentLength > 65536) { context.Response.StatusCode = 413; return; }
         try
         {
             using var handler = new HttpClientHandler { AllowAutoRedirect = false, UseCookies = false };
@@ -40,23 +54,22 @@ public sealed class MediaForgeProviderFilter : IAsyncResourceFilter
                 var count = 0;
                 while (count < buffer.Length)
                 {
-                    var read = await reader.ReadAsync(buffer.AsMemory(count, buffer.Length - count), context.HttpContext.RequestAborted);
+                    var read = await reader.ReadAsync(buffer.AsMemory(count, buffer.Length - count), context.RequestAborted);
                     if (read == 0) break;
                     count += read;
                 }
-                if (count > 65536) { context.Result = new StatusCodeResult(413); return; }
+                if (count > 65536) { context.Response.StatusCode = 413; return; }
                 upstream.Content = new StringContent(new string(buffer, 0, count), System.Text.Encoding.UTF8, "application/json");
             }
             // Mutations must finish even when a search/navigation closes its originating view.
-            var cancellation = request.Method == "GET" ? context.HttpContext.RequestAborted : CancellationToken.None;
+            var cancellation = request.Method == "GET" ? context.RequestAborted : CancellationToken.None;
             using var response = await client.SendAsync(upstream, cancellation);
-            context.HttpContext.Response.Headers.CacheControl = "no-store";
-            context.Result = new ContentResult {
-                StatusCode = (int)response.StatusCode, ContentType = "application/json",
-                Content = await response.Content.ReadAsStringAsync(cancellation)
-            };
+            context.Response.Headers.CacheControl = "no-store";
+            context.Response.StatusCode = (int)response.StatusCode;
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsync(await response.Content.ReadAsStringAsync(cancellation), cancellation);
         }
         catch (Exception e) when (e is HttpRequestException or TaskCanceledException)
-        { context.Result = new ObjectResult(new { error = true, code = "unreachable", message = "MediaForge is unavailable." }) { StatusCode = 502 }; }
+        { context.Response.StatusCode = 502; await context.Response.WriteAsJsonAsync(new { error = true, code = "unreachable", message = "MediaForge is unavailable." }); }
     }
 }
