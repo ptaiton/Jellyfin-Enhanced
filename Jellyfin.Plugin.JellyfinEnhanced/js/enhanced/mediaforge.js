@@ -1,7 +1,7 @@
 (function (JE) {
     'use strict';
-    // Sessions live only in this module, never in localStorage or plugin settings.
-    let session = '', dialog, enabled = false, checking = false, generation = 0;
+    // Reuse the Jellyfin session. No separate MediaForge token or login form.
+    let dialog, enabled = false, checking = false, generation = 0;
     const fr = (navigator.language || '').startsWith('fr');
     const t = (en, french) => fr ? french : en;
     const labels = {
@@ -28,7 +28,7 @@
         const response = await fetch(ApiClient.getUrl('JellyfinEnhanced/mediaforge/' + path), {
             method: body === undefined ? 'GET' : 'POST',
             headers: {
-                'X-Emby-Token': ApiClient.accessToken(), 'X-MediaForge-Session': session,
+                'X-Emby-Token': ApiClient.accessToken(),
                 'Content-Type': 'application/json'
             },
             body: body === undefined ? undefined : JSON.stringify(body), cache: 'no-store'
@@ -36,7 +36,6 @@
         const data = await response.json().catch(() => ({}));
         if (epoch !== generation) throw new Error(t('Account changed.', 'Le compte a changé.'));
         if (!response.ok) {
-            if (response.status === 401) session = '';
             throw new Error(data.error || t('MediaForge request failed.', 'Échec de la requête MediaForge.'));
         }
         return data;
@@ -67,30 +66,8 @@
             try { await action(); }
             catch (error) {
                 message.textContent = error.message;
-                if (!session) login();
             }
             finally { if (control) control.disabled = false; }
-        }
-        function login() {
-            content.replaceChildren();
-            element('p', t('Sign in with your MediaForge account. Your password is not saved.', 'Connectez-vous avec votre compte MediaForge. Votre mot de passe ne sera pas enregistré.'), content);
-            const form = element('form', null, content);
-            const username = field(form, t('Username', 'Utilisateur'));
-            username.autocomplete = 'username';
-            const password = field(form, t('Password', 'Mot de passe'), 'password');
-            password.autocomplete = 'current-password';
-            const submit = element('button', t('Sign in', 'Connexion'), form);
-            submit.type = 'submit'; submit.className = 'emby-button raised';
-            form.addEventListener('submit', event => {
-                event.preventDefault();
-                const credentials = { username: username.value, password: password.value };
-                password.value = '';
-                void run(async () => {
-                    const result = await api('login', credentials);
-                    session = result.session;
-                    search();
-                }, submit);
-            });
         }
         async function showDetails(item, target) {
             const data = await api(`details/${item.format}/${item.id}`);
@@ -129,9 +106,6 @@
         }
         function search() {
             content.replaceChildren();
-            button(t('Sign out', 'Déconnexion'), content, () => void run(async () => {
-                try { await api('logout', {}); } finally { session = ''; login(); }
-            }));
             const form = element('form', null, content);
             const query = field(form, t('Find a film or series', 'Rechercher un film ou une série'), 'search');
             const submit = element('button', t('Search', 'Rechercher'), form); submit.type = 'submit';
@@ -171,7 +145,7 @@
             query.focus();
         }
         current.showModal();
-        if (session) search(); else login();
+        search();
     }
     function mount() {
         if (!enabled || !ApiClient.getCurrentUserId() || document.getElementById('je-mediaforge')) return;
@@ -189,7 +163,7 @@
         finally { checking = false; }
     }
     JE.session.onUserChange('mediaforge', () => {
-        generation++; session = ''; enabled = false;
+        generation++; enabled = false;
         dialog?.close(); document.getElementById('je-mediaforge')?.remove();
         void check();
     });

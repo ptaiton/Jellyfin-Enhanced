@@ -7,16 +7,18 @@ This fork adds a separate **MediaForge** button to the Jellyfin web header. It w
 1. Build this fork for your Jellyfin version, or download the matching build from the **MediaForge builds** GitHub Actions workflow. Use `jf10` for Jellyfin 10.11, `jf12` for Jellyfin 12.
 2. Replace the existing Enhanced DLL in Jellyfin's plugin directory with this build while Jellyfin is stopped, then restart Jellyfin and refresh the browser. Keep a copy of the original DLL to revert.
 3. In **Dashboard → Plugins → Jellyfin Enhanced → Seerr**, enable **MediaForge** and enter its URL as reachable by the Jellyfin server, for example `http://mediaforge:8080`. Include a reverse proxy base path if applicable. Save.
-4. Open **MediaForge** in the header and sign in using your own MediaForge credentials. Existing Jellyfin credentials work if that MediaForge instance is configured to authenticate against Jellyfin.
+4. Ensure your Jellyfin accounts are imported and enabled in MediaForge and that MediaForge points to this Jellyfin server. Open **MediaForge** in the header: the current Jellyfin session is reused automatically, with no additional login.
 5. Search for a film or series, select the result and, for series, choose the seasons to request. Quality and audio/subtitle requirements use MediaForge's configured defaults.
 
 The tracked requests list shows MediaForge library statuses, supports pagination and has a Refresh button. Film status is also shown on the request button. Available or already-requested seasons are marked and cannot be selected again.
 
 ## Accounts and transport
 
-Each person signs in separately. MediaForge validates the account and its active state through its normal API. No shared administrator credential or automatic account mapping is introduced. The password is only used for the login request and is never saved in plugin settings or browser storage. The MediaForge session stays in browser memory and is discarded on Jellyfin account changes or page reload. Close the panel to keep the current session; use Sign out to discard it.
+The panel uses the current Jellyfin user's access token and never asks for a MediaForge password or creates a separate MediaForge session. Every proxied request sends this token to the administrator-configured MediaForge URL in `X-MediaForge-Jellyfin-Token`. MediaForge validates it against `/Users/Me` on its own configured Jellyfin server on every request. A revoked/expired Jellyfin token stops working immediately on the next request; there is no authentication cache or independent cookie that outlives it. Changing Jellyfin accounts closes the panel and discards its contents.
 
-Requests go through Jellyfin to MediaForge, so the browser does not need cross-origin cookie access or a public MediaForge address. The proxy forwards only a fixed set of search, detail, defaults, library, request and logout endpoints. It does not expose administration or accept an arbitrary upstream URL, and it does not follow redirects or forward Jellyfin credentials to MediaForge. Use HTTPS when the connection between the two servers crosses an untrusted network.
+MediaForge maps the verified Jellyfin username to an existing, active imported account, matching its existing import/login model. Unknown or locally disabled accounts are rejected. Local MediaForge roles are preserved: a Jellyfin administrator is not automatically promoted by this integration. Username changes require importing/updating the corresponding account. This currently uses usernames, not a persistent Jellyfin ID mapping.
+
+The proxy accepts only fixed search, detail, defaults, library and request endpoints. It does not expose administration, accept a caller-supplied upstream URL, follow redirects or forward browser cookies. The browser does not need cross-origin cookies or a public MediaForge address. Use HTTPS when either server-to-server connection crosses an untrusted network. Update MediaForge alongside this plugin: its authentication extractor must support `X-MediaForge-Jellyfin-Token`.
 
 ## Scope
 

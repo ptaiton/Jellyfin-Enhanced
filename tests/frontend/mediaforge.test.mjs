@@ -21,10 +21,8 @@ function setup(format = 'movie') {
     w.eval(source);
     const click = text => { const b = [...w.document.querySelectorAll('button')].find(b => b.textContent === text); assert.ok(b, text); b.click(); };
     async function login() {
-        await settle(); click('MediaForge');
-        const form = w.document.querySelector('dialog form');
-        form.querySelector('input[type=text]').value = 'alice'; form.querySelector('input[type=password]').value = 'password';
-        form.dispatchEvent(new w.Event('submit', { cancelable: true })); await settle();
+        await settle(); click('MediaForge'); await settle();
+        assert.equal(w.document.querySelector('input[type=password]'), null);
     }
     async function search() {
         const form = w.document.querySelector('dialog form'); form.querySelector('input').value = 'A & B';
@@ -40,7 +38,9 @@ test('movie request uses personal session, server defaults, and safe text render
     const call = h.calls.find(c => c.url.endsWith('/request'));
     assert.ok(call); const body = JSON.parse(call.options.body);
     assert.equal(body.tmdb_id, 123); assert.equal(body.quality, '1080p'); assert.equal(body.media_type, 'auto');
-    assert.equal(call.options.headers['X-MediaForge-Session'], 'abc.def');
+    assert.equal(call.options.headers['X-Emby-Token'], 'jellyfin-secret');
+    assert.equal(call.options.headers['X-MediaForge-Session'], undefined);
+    assert.ok(!h.calls.some(c => c.url.endsWith('/login')));
     assert.equal(h.w.localStorage.length, 0); assert.equal(h.w.sessionStorage.length, 0);
     h.dom.window.close();
 });
@@ -56,6 +56,7 @@ test('series requires explicit season selection and does not request available s
 test('account changes close the panel and discard the MediaForge session', async () => {
     const h = setup(); await h.login(); h.resets.mediaforge(); await settle();
     assert.equal(h.w.document.querySelector('dialog'), null); h.click('MediaForge');
-    assert.ok(h.w.document.querySelector('input[type=password]'));
+    assert.equal(h.w.document.querySelector('input[type=password]'), null);
+    assert.ok(h.w.document.querySelector('input[type=search]'));
     h.dom.window.close();
 });

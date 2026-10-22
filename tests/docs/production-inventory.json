@@ -3100,15 +3100,6 @@
       "following_attributes": []
     },
     {
-      "verb": "POST",
-      "path": "/JellyfinEnhanced/mediaforge/login",
-      "method": "Login",
-      "file": "Jellyfin.Plugin.JellyfinEnhanced/Controllers/MediaForgeController.cs",
-      "following_attributes": [
-        "RequestSizeLimit(16384)"
-      ]
-    },
-    {
       "verb": "GET",
       "path": "/JellyfinEnhanced/mediaforge/search",
       "method": "Search",
@@ -3144,13 +3135,6 @@
       "following_attributes": [
         "RequestSizeLimit(32768)"
       ]
-    },
-    {
-      "verb": "POST",
-      "path": "/JellyfinEnhanced/mediaforge/logout",
-      "method": "Logout",
-      "file": "Jellyfin.Plugin.JellyfinEnhanced/Controllers/MediaForgeController.cs",
-      "following_attributes": []
     }
   ],
   "configuration_properties": [
@@ -7860,7 +7844,7 @@
   "counts": {
     "build_targets": 2,
     "files": 359,
-    "routes": 186,
+    "routes": 184,
     "configuration_properties": 532,
     "storage_references": 69,
     "scheduled_tasks": 13,
