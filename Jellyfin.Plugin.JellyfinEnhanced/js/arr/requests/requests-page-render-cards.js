@@ -35,7 +35,7 @@
     const sourceLabel = escapeHtml(item.instanceName || item.source);
 
     const posterHtml = item.posterUrl
-      ? `<img class="je-download-poster" src="${item.posterUrl}" alt="" loading="lazy" onerror="this.style.display='none'">`
+      ? `<img class="je-download-poster" src="${escapeHtml(item.posterUrl)}" alt="" loading="lazy" onerror="this.style.display='none'">`
       : `<div class="je-download-poster placeholder"></div>`;
 
     const progressHtml = `
@@ -56,8 +56,8 @@
         <div class="je-download-card-content">
           ${posterHtml}
           <div class="je-download-info">
-            <div class="je-download-title" title="${item.title || ""}">${item.title || JE.t?.("requests_unknown") || "Unknown"}</div>
-            ${item.subtitle ? `<div class="je-download-subtitle" title="${item.subtitle}">${item.subtitle}</div>` : ""}
+            <div class="je-download-title" title="${escapeHtml(item.title || "")}">${escapeHtml(item.title || JE.t?.("requests_unknown") || "Unknown")}</div>
+            ${item.subtitle ? `<div class="je-download-subtitle" title="${escapeHtml(item.subtitle)}">${escapeHtml(item.subtitle)}</div>` : ""}
             <div class="je-download-meta">
                 <span class="je-download-badge je-arr-badge" title="${sourceLabel}"><img src="${sourceIcon}" alt="${sourceLabel}" loading="lazy"></span>
               <span class="je-download-badge" style="background: ${statusColor}">${escapeHtml(translateStatus(item.status))}</span>
@@ -342,7 +342,7 @@
     const statusColor = STATUS_COLORS[item.status] || STATUS_COLORS.Unknown;
 
     const posterHtml = item.posterUrl
-      ? `<img class="je-download-poster" src="${item.posterUrl}" alt="" loading="lazy" onerror="this.style.display='none'">`
+      ? `<img class="je-download-poster" src="${escapeHtml(item.posterUrl)}" alt="" loading="lazy" onerror="this.style.display='none'">`
       : `<div class="je-download-poster placeholder"></div>`;
 
     // Calculate total size for the pack
@@ -380,7 +380,7 @@
         <div class="je-download-card-content">
           ${posterHtml}
           <div class="je-download-info">
-            <div class="je-download-title" title="${item.title || ""}">${item.title || JE.t?.("requests_unknown") || "Unknown"}</div>
+            <div class="je-download-title" title="${escapeHtml(item.title || "")}">${escapeHtml(item.title || JE.t?.("requests_unknown") || "Unknown")}</div>
             <div class="je-download-subtitle">${JE.t?.("requests_season") || "Season"} ${item.seasonNumber} (${group.episodeCount} ${JE.t?.("requests_episodes") || "episodes"})</div>
             <div class="je-download-meta">
               <span class="je-download-badge je-arr-badge" title="Sonarr"><img src="${SONARR_ICON_URL}" alt="Sonarr" loading="lazy"></span>

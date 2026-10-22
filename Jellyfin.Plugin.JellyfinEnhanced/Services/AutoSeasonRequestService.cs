@@ -74,7 +74,7 @@ namespace Jellyfin.Plugin.JellyfinEnhanced.Services
         private async Task<string?> GetSeriesDetailsJsonAsync(string tmdbId)
         {
             var config = JellyfinEnhanced.Instance?.Configuration;
-            if (config == null || string.IsNullOrEmpty(config.JellyseerrUrls) || string.IsNullOrEmpty(config.JellyseerrApiKey))
+            if (config == null || string.IsNullOrEmpty(config.RequestProviderUrls()) || string.IsNullOrEmpty(config.RequestProviderKey()))
             {
                 return null;
             }
@@ -97,7 +97,7 @@ namespace Jellyfin.Plugin.JellyfinEnhanced.Services
 
             async Task<string?> FetchAsync()
             {
-                var urls = GetConfiguredUrls(config.JellyseerrUrls);
+                var urls = GetConfiguredUrls(config.RequestProviderUrls());
                 var httpClient = Helpers.Jellyseerr.SeerrHttpHelper.CreateClient(_httpClientFactory);
 
                 foreach (var url in urls)
@@ -106,7 +106,7 @@ namespace Jellyfin.Plugin.JellyfinEnhanced.Services
                     {
                         var requestUrl = $"{url}/api/v1/tv/{tmdbId}";
                         using var request = Helpers.Jellyseerr.SeerrHttpHelper.BuildRequest(
-                            HttpMethod.Get, requestUrl, config.JellyseerrApiKey);
+                            HttpMethod.Get, requestUrl, config.RequestProviderKey());
                         using var response = await httpClient.SendAsync(request);
                         var (content, error) = await Helpers.Jellyseerr.SeerrHttpHelper.ReadResponseAsync(response, requestUrl);
                         if (error != null)
@@ -160,7 +160,7 @@ namespace Jellyfin.Plugin.JellyfinEnhanced.Services
         public async Task CheckEpisodeCompletionAsync(BaseItem episodeItem, Guid userId)
         {
             var config = JellyfinEnhanced.Instance?.Configuration;
-            if (config == null || !config.AutoSeasonRequestEnabled || !config.JellyseerrEnabled)
+            if (config == null || !config.AutoSeasonRequestEnabled || !config.RequestProviderEnabled())
             {
                 return;
             }
@@ -368,7 +368,7 @@ namespace Jellyfin.Plugin.JellyfinEnhanced.Services
         private async Task<int?> GetTotalEpisodesInSeasonFromTmdb(string tmdbId, int seasonNumber)
         {
             var config = JellyfinEnhanced.Instance?.Configuration;
-            if (config == null || string.IsNullOrEmpty(config.JellyseerrUrls) || string.IsNullOrEmpty(config.JellyseerrApiKey))
+            if (config == null || string.IsNullOrEmpty(config.RequestProviderUrls()) || string.IsNullOrEmpty(config.RequestProviderKey()))
             {
                 return null;
             }
@@ -429,14 +429,14 @@ namespace Jellyfin.Plugin.JellyfinEnhanced.Services
         private async Task<SeasonStatus?> GetSeasonStatusFromJellyseerr(string tmdbId, int seasonNumber)
         {
             var config = JellyfinEnhanced.Instance?.Configuration;
-            if (config == null || string.IsNullOrEmpty(config.JellyseerrUrls) || string.IsNullOrEmpty(config.JellyseerrApiKey))
+            if (config == null || string.IsNullOrEmpty(config.RequestProviderUrls()) || string.IsNullOrEmpty(config.RequestProviderKey()))
             {
                 return null;
             }
 
             try
             {
-                var urls = GetConfiguredUrls(config.JellyseerrUrls);
+                var urls = GetConfiguredUrls(config.RequestProviderUrls());
                 var httpClient = Helpers.Jellyseerr.SeerrHttpHelper.CreateClient(_httpClientFactory);
 
                 string? content = null;
@@ -446,7 +446,7 @@ namespace Jellyfin.Plugin.JellyfinEnhanced.Services
                     {
                         var requestUrl = $"{url}/api/v1/tv/{tmdbId}";
                         using var request = Helpers.Jellyseerr.SeerrHttpHelper.BuildRequest(
-                            HttpMethod.Get, requestUrl, config.JellyseerrApiKey);
+                            HttpMethod.Get, requestUrl, config.RequestProviderKey());
                         using var response = await httpClient.SendAsync(request);
                         var (body, error) = await Helpers.Jellyseerr.SeerrHttpHelper.ReadResponseAsync(response, requestUrl);
                         if (error != null)
@@ -582,7 +582,7 @@ namespace Jellyfin.Plugin.JellyfinEnhanced.Services
         private async Task<bool> RequestNextSeason(string tmdbId, int seasonNumber, string jellyfinUserId)
         {
             var config = JellyfinEnhanced.Instance?.Configuration;
-            if (config == null || string.IsNullOrEmpty(config.JellyseerrUrls) || string.IsNullOrEmpty(config.JellyseerrApiKey))
+            if (config == null || string.IsNullOrEmpty(config.RequestProviderUrls()) || string.IsNullOrEmpty(config.RequestProviderKey()))
             {
                 _logger.Warning("[Auto-Season-Request] Jellyseerr configuration is missing");
                 return false;
@@ -596,7 +596,7 @@ namespace Jellyfin.Plugin.JellyfinEnhanced.Services
                 return false;
             }
 
-            var urls = GetConfiguredUrls(config.JellyseerrUrls);
+            var urls = GetConfiguredUrls(config.RequestProviderUrls());
             var httpClient = Helpers.Jellyseerr.SeerrHttpHelper.CreateClient(_httpClientFactory);
 
             foreach (var url in urls)
@@ -615,7 +615,7 @@ namespace Jellyfin.Plugin.JellyfinEnhanced.Services
                     var jsonContent = JsonSerializer.Serialize(requestBody);
 
                     using var request = Helpers.Jellyseerr.SeerrHttpHelper.BuildRequest(
-                        HttpMethod.Post, requestUri, config.JellyseerrApiKey, jellyseerrUserId, jsonContent);
+                        HttpMethod.Post, requestUri, config.RequestProviderKey(), jellyseerrUserId, jsonContent);
                     using var response = await httpClient.SendAsync(request);
                     var (_, error) = await Helpers.Jellyseerr.SeerrHttpHelper.ReadResponseAsync(response, requestUri);
 
@@ -638,7 +638,7 @@ namespace Jellyfin.Plugin.JellyfinEnhanced.Services
         private async Task<string?> GetJellyseerrUserId(string jellyfinUserId)
         {
             var config = JellyfinEnhanced.Instance?.Configuration;
-            if (config == null || string.IsNullOrEmpty(config.JellyseerrUrls) || string.IsNullOrEmpty(config.JellyseerrApiKey))
+            if (config == null || string.IsNullOrEmpty(config.RequestProviderUrls()) || string.IsNullOrEmpty(config.RequestProviderKey()))
             {
                 return null;
             }
@@ -654,7 +654,7 @@ namespace Jellyfin.Plugin.JellyfinEnhanced.Services
                 }
             }
 
-            var urls = GetConfiguredUrls(config.JellyseerrUrls);
+            var urls = GetConfiguredUrls(config.RequestProviderUrls());
             var httpClient = Helpers.Jellyseerr.SeerrHttpHelper.CreateClient(_httpClientFactory);
 
             foreach (var url in urls)
@@ -663,7 +663,7 @@ namespace Jellyfin.Plugin.JellyfinEnhanced.Services
                 {
                     var requestUri = $"{url.Trim().TrimEnd('/')}/api/v1/user?take=1000";
                     using var request = Helpers.Jellyseerr.SeerrHttpHelper.BuildRequest(
-                        HttpMethod.Get, requestUri, config.JellyseerrApiKey);
+                        HttpMethod.Get, requestUri, config.RequestProviderKey());
                     using var response = await httpClient.SendAsync(request);
                     var (content, error) = await Helpers.Jellyseerr.SeerrHttpHelper.ReadResponseAsync(response, requestUri);
 

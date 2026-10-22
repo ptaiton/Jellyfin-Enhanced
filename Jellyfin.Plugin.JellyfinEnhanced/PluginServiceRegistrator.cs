@@ -19,6 +19,7 @@ namespace Jellyfin.Plugin.JellyfinEnhanced
     {
         public void RegisterServices(IServiceCollection serviceCollection, IServerApplicationHost applicationHost)
         {
+            serviceCollection.Configure<MvcOptions>(options => options.Filters.Add<MediaForgeProviderFilter>());
             serviceCollection.AddSingleton<StartupService>();
             // Build-target vs host-version check; logged at startup and surfaced
             // on the config page so a jf10 zip on a Jellyfin 12 host is not silent.

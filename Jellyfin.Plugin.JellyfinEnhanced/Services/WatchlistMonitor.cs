@@ -69,7 +69,7 @@ namespace Jellyfin.Plugin.JellyfinEnhanced.Services
                 return;
             }
 
-            if (!config.AddRequestedMediaToWatchlist || !config.JellyseerrEnabled)
+            if (!config.AddRequestedMediaToWatchlist || !config.RequestProviderEnabled())
             {
                 _logger.Info("[Watchlist] Watchlist monitoring is disabled in configuration - not subscribing to library events");
                 return;
@@ -132,7 +132,7 @@ namespace Jellyfin.Plugin.JellyfinEnhanced.Services
                     return;
                 }
 
-                if (!config.JellyseerrEnabled)
+                if (!config.RequestProviderEnabled())
                 {
                     _logger.Debug("[Watchlist] JellyseerrEnabled is disabled");
                     return;
@@ -161,8 +161,8 @@ namespace Jellyfin.Plugin.JellyfinEnhanced.Services
                 // _logger.Info($"[Watchlist] New {mediaType} added to library: '{e.Item.Name}' (TMDB: {tmdbId})");
 
                 // Query Jellyseerr for ALL requests in a single API call
-                var jellyseerrUrl = config.JellyseerrUrls?.Split(new[] { '\r', '\n', ',' }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault()?.Trim().TrimEnd('/');
-                if (string.IsNullOrEmpty(jellyseerrUrl) || string.IsNullOrEmpty(config.JellyseerrApiKey))
+                var jellyseerrUrl = config.RequestProviderUrls()?.Split(new[] { '\r', '\n', ',' }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault()?.Trim().TrimEnd('/');
+                if (string.IsNullOrEmpty(jellyseerrUrl) || string.IsNullOrEmpty(config.RequestProviderKey()))
                 {
                     _logger.Warning("[Watchlist] Jellyseerr URL or API key not configured");
                     return;
@@ -171,7 +171,7 @@ namespace Jellyfin.Plugin.JellyfinEnhanced.Services
                 var httpClient = Helpers.Jellyseerr.SeerrHttpHelper.CreateClient(_httpClientFactory);
 
                 // Fetch all requests at once (no X-Api-User header = all requests)
-                var allRequests = await GetAllJellyseerrRequests(httpClient, jellyseerrUrl, config.JellyseerrApiKey);
+                var allRequests = await GetAllJellyseerrRequests(httpClient, jellyseerrUrl, config.RequestProviderKey());
                 if (allRequests == null || allRequests.Count == 0)
                 {
                     return;

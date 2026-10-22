@@ -105,7 +105,7 @@
         const storedTvdbId = Number.isInteger(tvDetails.mediaInfo?.tvdbId) && tvDetails.mediaInfo.tvdbId > 0
             ? tvDetails.mediaInfo.tvdbId
             : null;
-        const needsTvdbMatch = !tvDetails.externalIds?.tvdbId && !storedTvdbId;
+        const needsTvdbMatch = !JE.pluginConfig?.MediaForgeEnabled && !tvDetails.externalIds?.tvdbId && !storedTvdbId;
 
         // Show season selection UI with Select All checkbox header
         const bodyHtml = `${needsTvdbMatch ? buildTvdbMatchHTML() : ''}<div class="jellyseerr-season-list">

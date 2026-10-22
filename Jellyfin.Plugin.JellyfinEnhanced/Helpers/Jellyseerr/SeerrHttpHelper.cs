@@ -110,14 +110,25 @@ namespace Jellyfin.Plugin.JellyfinEnhanced.Helpers.Jellyseerr
             string? apiUserId = null,
             string? bodyJson = null)
         {
+            var config = JellyfinEnhanced.Instance?.Configuration;
+            var mediaForge = config?.MediaForgeEnabled == true
+                && Uri.TryCreate(config.MediaForgeUrl.TrimEnd('/') + "/", UriKind.Absolute, out var provider)
+                && Uri.TryCreate(url, UriKind.Absolute, out var original)
+                && original.GetLeftPart(UriPartial.Authority) == provider.GetLeftPart(UriPartial.Authority)
+                && original.AbsolutePath.StartsWith(provider.AbsolutePath + "api/v1/", StringComparison.Ordinal);
+            if (mediaForge)
+            {
+                var source = new Uri(url);
+                var offset = source.AbsolutePath.IndexOf("/api/v1/", StringComparison.Ordinal);
+                url = config!.MediaForgeUrl.TrimEnd('/') + "/api/integrations/jellyfin-enhanced/service/"
+                    + source.AbsolutePath[(offset + 8)..] + source.Query;
+            }
             var req = new HttpRequestMessage(method, url);
             req.Headers.UserAgent.ParseAdd(UserAgent);
             req.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-            req.Headers.Add("X-Api-Key", apiKey);
+            req.Headers.Add(mediaForge ? "X-MediaForge-Server-Key" : "X-Api-Key", apiKey);
             if (!string.IsNullOrEmpty(apiUserId))
-            {
-                req.Headers.Add("X-Api-User", apiUserId);
-            }
+                req.Headers.Add(mediaForge ? "X-MediaForge-User-Id" : "X-Api-User", apiUserId);
             if (bodyJson != null)
             {
                 req.Content = new StringContent(bodyJson, Encoding.UTF8, "application/json");

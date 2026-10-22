@@ -64,12 +64,12 @@ namespace Jellyfin.Plugin.JellyfinEnhanced.Services
         public async Task CheckMovieForCollectionRequestAsync(BaseItem movieItem, Guid userId)
         {
             var config = JellyfinEnhanced.Instance?.Configuration;
-            if (config == null || !config.AutoMovieRequestEnabled || !config.JellyseerrEnabled)
+            if (config == null || !config.AutoMovieRequestEnabled || !config.RequestProviderEnabled())
             {
                 return;
             }
 
-            if (string.IsNullOrEmpty(config.TMDB_API_KEY))
+            if (!config.MediaForgeEnabled && string.IsNullOrEmpty(config.TMDB_API_KEY))
             {
                 _logger.Warning("[Auto-Movie-Request] TMDB API key is not configured. Auto movie requests require TMDB API access.");
                 return;
@@ -203,7 +203,7 @@ namespace Jellyfin.Plugin.JellyfinEnhanced.Services
         private async Task<CollectionInfo?> GetTmdbCollectionIdAsync(string tmdbId)
         {
             var config = JellyfinEnhanced.Instance?.Configuration;
-            if (config == null || string.IsNullOrEmpty(config.TMDB_API_KEY))
+            if (config == null || (!config.MediaForgeEnabled && string.IsNullOrEmpty(config.TMDB_API_KEY)))
             {
                 return null;
             }
@@ -213,7 +213,14 @@ namespace Jellyfin.Plugin.JellyfinEnhanced.Services
                 var httpClient = _httpClientFactory.CreateClient();
                 var requestUrl = $"https://api.themoviedb.org/3/movie/{tmdbId}?api_key={config.TMDB_API_KEY}";
 
-                var response = await httpClient.GetAsync(requestUrl);
+                HttpResponseMessage response;
+                if (config.MediaForgeEnabled)
+                {
+                    using var request = Helpers.Jellyseerr.SeerrHttpHelper.BuildRequest(HttpMethod.Get,
+                        config.MediaForgeUrl.TrimEnd('/') + "/api/v1/raw/movie/" + tmdbId, config.MediaForgeIntegrationKey);
+                    response = await httpClient.SendAsync(request);
+                }
+                else response = await httpClient.GetAsync(requestUrl);
                 if (!response.IsSuccessStatusCode)
                 {
                     _logger.Debug($"[Auto-Movie-Request] TMDB returned {response.StatusCode} for movie {tmdbId}");
@@ -251,14 +258,14 @@ namespace Jellyfin.Plugin.JellyfinEnhanced.Services
         private async Task<MovieInfo?> GetNextMovieInCollectionAsync(int collectionId, string currentTmdbId)
         {
             var config = JellyfinEnhanced.Instance?.Configuration;
-            if (config == null || string.IsNullOrEmpty(config.JellyseerrUrls) || string.IsNullOrEmpty(config.JellyseerrApiKey))
+            if (config == null || string.IsNullOrEmpty(config.RequestProviderUrls()) || string.IsNullOrEmpty(config.RequestProviderKey()))
             {
                 return null;
             }
 
             try
             {
-                var urls = GetConfiguredUrls(config.JellyseerrUrls);
+                var urls = GetConfiguredUrls(config.RequestProviderUrls());
                 var httpClient = Helpers.Jellyseerr.SeerrHttpHelper.CreateClient(_httpClientFactory);
 
                 foreach (var url in urls)
@@ -269,7 +276,7 @@ namespace Jellyfin.Plugin.JellyfinEnhanced.Services
                     try
                     {
                         using var request = Helpers.Jellyseerr.SeerrHttpHelper.BuildRequest(
-                            HttpMethod.Get, requestUrl, config.JellyseerrApiKey);
+                            HttpMethod.Get, requestUrl, config.RequestProviderKey());
                         using var response = await httpClient.SendAsync(request);
                         var (content, error) = await Helpers.Jellyseerr.SeerrHttpHelper.ReadResponseAsync(response, requestUrl);
                         if (error != null)
@@ -376,12 +383,12 @@ namespace Jellyfin.Plugin.JellyfinEnhanced.Services
         private async Task<QualityProfileSettings?> GetOriginalMovieQualityProfileAsync(string tmdbId)
         {
             var config = JellyfinEnhanced.Instance?.Configuration;
-            if (config == null || string.IsNullOrEmpty(config.JellyseerrUrls) || string.IsNullOrEmpty(config.JellyseerrApiKey))
+            if (config == null || string.IsNullOrEmpty(config.RequestProviderUrls()) || string.IsNullOrEmpty(config.RequestProviderKey()))
             {
                 return null;
             }
 
-            var urls = GetConfiguredUrls(config.JellyseerrUrls);
+            var urls = GetConfiguredUrls(config.RequestProviderUrls());
             var httpClient = Helpers.Jellyseerr.SeerrHttpHelper.CreateClient(_httpClientFactory);
 
             foreach (var url in urls)
@@ -390,7 +397,7 @@ namespace Jellyfin.Plugin.JellyfinEnhanced.Services
                 {
                     var requestUrl = $"{url}/api/v1/movie/{tmdbId}";
                     using var request = Helpers.Jellyseerr.SeerrHttpHelper.BuildRequest(
-                        HttpMethod.Get, requestUrl, config.JellyseerrApiKey);
+                        HttpMethod.Get, requestUrl, config.RequestProviderKey());
                     using var response = await httpClient.SendAsync(request);
                     var (content, error) = await Helpers.Jellyseerr.SeerrHttpHelper.ReadResponseAsync(response, requestUrl);
                     if (error != null)
@@ -538,7 +545,7 @@ namespace Jellyfin.Plugin.JellyfinEnhanced.Services
         private async Task<bool> RequestMovie(string tmdbId, string jellyfinUserId, QualityProfileSettings? qualitySettings = null)
         {
             var config = JellyfinEnhanced.Instance?.Configuration;
-            if (config == null || string.IsNullOrEmpty(config.JellyseerrUrls) || string.IsNullOrEmpty(config.JellyseerrApiKey))
+            if (config == null || string.IsNullOrEmpty(config.RequestProviderUrls()) || string.IsNullOrEmpty(config.RequestProviderKey()))
             {
                 _logger.Warning("[Auto-Movie-Request] Jellyseerr configuration is missing");
                 return false;
@@ -552,7 +559,7 @@ namespace Jellyfin.Plugin.JellyfinEnhanced.Services
                 return false;
             }
 
-            var urls = GetConfiguredUrls(config.JellyseerrUrls);
+            var urls = GetConfiguredUrls(config.RequestProviderUrls());
             var httpClient = Helpers.Jellyseerr.SeerrHttpHelper.CreateClient(_httpClientFactory);
 
             foreach (var url in urls)
@@ -582,7 +589,7 @@ namespace Jellyfin.Plugin.JellyfinEnhanced.Services
                     var jsonContent = JsonSerializer.Serialize(requestBody);
 
                     using var request = Helpers.Jellyseerr.SeerrHttpHelper.BuildRequest(
-                        HttpMethod.Post, requestUri, config.JellyseerrApiKey, jellyseerrUserId, jsonContent);
+                        HttpMethod.Post, requestUri, config.RequestProviderKey(), jellyseerrUserId, jsonContent);
                     using var response = await httpClient.SendAsync(request);
                     var (_, error) = await Helpers.Jellyseerr.SeerrHttpHelper.ReadResponseAsync(response, requestUri);
 
@@ -605,7 +612,7 @@ namespace Jellyfin.Plugin.JellyfinEnhanced.Services
         private async Task<string?> GetJellyseerrUserId(string jellyfinUserId)
         {
             var config = JellyfinEnhanced.Instance?.Configuration;
-            if (config == null || string.IsNullOrEmpty(config.JellyseerrUrls) || string.IsNullOrEmpty(config.JellyseerrApiKey))
+            if (config == null || string.IsNullOrEmpty(config.RequestProviderUrls()) || string.IsNullOrEmpty(config.RequestProviderKey()))
             {
                 return null;
             }
@@ -621,7 +628,7 @@ namespace Jellyfin.Plugin.JellyfinEnhanced.Services
                 }
             }
 
-            var urls = GetConfiguredUrls(config.JellyseerrUrls);
+            var urls = GetConfiguredUrls(config.RequestProviderUrls());
             var httpClient = Helpers.Jellyseerr.SeerrHttpHelper.CreateClient(_httpClientFactory);
 
             foreach (var url in urls)
@@ -630,7 +637,7 @@ namespace Jellyfin.Plugin.JellyfinEnhanced.Services
                 {
                     var requestUri = $"{url.Trim().TrimEnd('/')}/api/v1/user?take=1000";
                     using var request = Helpers.Jellyseerr.SeerrHttpHelper.BuildRequest(
-                        HttpMethod.Get, requestUri, config.JellyseerrApiKey);
+                        HttpMethod.Get, requestUri, config.RequestProviderKey());
                     using var response = await httpClient.SendAsync(request);
                     var (content, error) = await Helpers.Jellyseerr.SeerrHttpHelper.ReadResponseAsync(response, requestUri);
 

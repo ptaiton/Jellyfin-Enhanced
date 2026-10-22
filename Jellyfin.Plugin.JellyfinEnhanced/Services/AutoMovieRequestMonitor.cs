@@ -49,7 +49,7 @@ namespace Jellyfin.Plugin.JellyfinEnhanced.Services
                 return;
             }
 
-            if (!config.AutoMovieRequestEnabled || !config.JellyseerrEnabled)
+            if (!config.AutoMovieRequestEnabled || !config.RequestProviderEnabled())
             {
                 _logger.Info("[Auto-Movie-Request] Auto-Movie-Request monitoring is disabled in configuration - not subscribing to playback events");
                 return;
@@ -70,7 +70,7 @@ namespace Jellyfin.Plugin.JellyfinEnhanced.Services
             {
                 // Check if auto-movie-request is enabled
                 var config = JellyfinEnhanced.Instance?.Configuration;
-                if (config == null || !config.AutoMovieRequestEnabled || !config.JellyseerrEnabled)
+                if (config == null || !config.AutoMovieRequestEnabled || !config.RequestProviderEnabled())
                 {
                     return;
                 }

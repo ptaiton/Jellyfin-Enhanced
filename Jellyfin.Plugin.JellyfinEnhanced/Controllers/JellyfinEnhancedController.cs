@@ -3075,7 +3075,7 @@ namespace Jellyfin.Plugin.JellyfinEnhanced.Controllers
             try
             {
                 var config = JellyfinEnhanced.Instance?.Configuration;
-                if (config == null || !config.JellyseerrEnabled || !config.SyncJellyseerrWatchlist)
+                if (config == null || !config.RequestProviderEnabled() || !config.SyncJellyseerrWatchlist)
                 {
                     return BadRequest(new { error = "Jellyseerr watchlist sync is not enabled" });
                 }
@@ -3723,7 +3723,8 @@ namespace Jellyfin.Plugin.JellyfinEnhanced.Controllers
                 config.EnableTagsLocalStorageFallback,
 
                 // Seerr Search Settings
-                config.JellyseerrEnabled,
+                MediaForgeEnabled = config.MediaForgeEnabled,
+                JellyseerrEnabled = config.MediaForgeEnabled || config.JellyseerrEnabled,
                 config.JellyseerrShowSearchResults,
                 config.JellyseerrSearchExcludeLibraryItems,
                 config.JellyseerrShowReportButton,
@@ -3991,7 +3992,7 @@ namespace Jellyfin.Plugin.JellyfinEnhanced.Controllers
                 spoilerBlurSeries = TryReadSpoilerBlurStateForBootstrap(authorizedUserId);
             }
 
-            if (config.JellyseerrEnabled)
+            if (config.JellyseerrEnabled && !config.MediaForgeEnabled)
             {
                 // Same "D"-format id GetJellyseerrUserStatus reads from the token.
                 seerrUserStatus = TryBuildSeerrUserStatusWithoutLookup(config, userId.ToString(), isAdmin);

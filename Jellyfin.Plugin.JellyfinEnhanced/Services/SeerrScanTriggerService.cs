@@ -65,7 +65,7 @@ namespace Jellyfin.Plugin.JellyfinEnhanced.Services
             {
                 if (JellyfinEnhanced.Instance?.Configuration is not PluginConfiguration config) return;
                 if (!config.TriggerSeerrScanOnItemAdded) return;
-                if (!config.JellyseerrEnabled) return;
+                if (!config.RequestProviderEnabled()) return;
 
                 // Seerr's recently-added scan only inspects movies and series (and crawls
                 // their seasons/episodes itself). Filtering on the parent kinds avoids
@@ -127,8 +127,8 @@ namespace Jellyfin.Plugin.JellyfinEnhanced.Services
                     return results;
                 }
 
-                var apiKey = config.JellyseerrApiKey;
-                var urls = ParseUrls(config.JellyseerrUrls);
+                var apiKey = config.RequestProviderKey();
+                var urls = ParseUrls(config.RequestProviderUrls());
                 if (urls.Count == 0 || string.IsNullOrEmpty(apiKey))
                 {
                     _logger.Warning("[SeerrScan] Cannot dispatch: Seerr URL(s) or API key not configured");

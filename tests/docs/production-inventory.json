@@ -67,10 +67,6 @@
       "category": "Controllers"
     },
     {
-      "path": "Jellyfin.Plugin.JellyfinEnhanced/Controllers/MediaForgeController.cs",
-      "category": "Controllers"
-    },
-    {
       "path": "Jellyfin.Plugin.JellyfinEnhanced/EventHandlers/ActivityPlaybackConsumer.cs",
       "category": "EventHandlers"
     },
@@ -384,6 +380,10 @@
     },
     {
       "path": "Jellyfin.Plugin.JellyfinEnhanced/Services/MdblistService.cs",
+      "category": "Services"
+    },
+    {
+      "path": "Jellyfin.Plugin.JellyfinEnhanced/Services/MediaForgeProviderFilter.cs",
       "category": "Services"
     },
     {
@@ -915,7 +915,7 @@
       "category": "js"
     },
     {
-      "path": "Jellyfin.Plugin.JellyfinEnhanced/js/enhanced/mediaforge.js",
+      "path": "Jellyfin.Plugin.JellyfinEnhanced/js/enhanced/mediaforge-provider.js",
       "category": "js"
     },
     {
@@ -3091,50 +3091,6 @@
       "method": "GetView",
       "file": "Jellyfin.Plugin.JellyfinEnhanced/Controllers/JellyfinEnhancedController.cs",
       "following_attributes": []
-    },
-    {
-      "verb": "GET",
-      "path": "/JellyfinEnhanced/mediaforge/config",
-      "method": "Config",
-      "file": "Jellyfin.Plugin.JellyfinEnhanced/Controllers/MediaForgeController.cs",
-      "following_attributes": []
-    },
-    {
-      "verb": "GET",
-      "path": "/JellyfinEnhanced/mediaforge/search",
-      "method": "Search",
-      "file": "Jellyfin.Plugin.JellyfinEnhanced/Controllers/MediaForgeController.cs",
-      "following_attributes": []
-    },
-    {
-      "verb": "GET",
-      "path": "/JellyfinEnhanced/mediaforge/defaults",
-      "method": "Defaults",
-      "file": "Jellyfin.Plugin.JellyfinEnhanced/Controllers/MediaForgeController.cs",
-      "following_attributes": []
-    },
-    {
-      "verb": "GET",
-      "path": "/JellyfinEnhanced/mediaforge/details/{format}/{id:long}",
-      "method": "Details",
-      "file": "Jellyfin.Plugin.JellyfinEnhanced/Controllers/MediaForgeController.cs",
-      "following_attributes": []
-    },
-    {
-      "verb": "GET",
-      "path": "/JellyfinEnhanced/mediaforge/library",
-      "method": "Library",
-      "file": "Jellyfin.Plugin.JellyfinEnhanced/Controllers/MediaForgeController.cs",
-      "following_attributes": []
-    },
-    {
-      "verb": "POST",
-      "path": "/JellyfinEnhanced/mediaforge/request",
-      "method": "RequestMedia",
-      "file": "Jellyfin.Plugin.JellyfinEnhanced/Controllers/MediaForgeController.cs",
-      "following_attributes": [
-        "RequestSizeLimit(32768)"
-      ]
     }
   ],
   "configuration_properties": [
@@ -3181,6 +3137,14 @@
     {
       "class": "PluginConfiguration",
       "name": "MediaForgeUrl",
+      "type": "string",
+      "initializer": "string.Empty",
+      "constructor_assignment": null,
+      "file": "Jellyfin.Plugin.JellyfinEnhanced/Configuration/PluginConfiguration.cs"
+    },
+    {
+      "class": "PluginConfiguration",
+      "name": "MediaForgeIntegrationKey",
       "type": "string",
       "initializer": "string.Empty",
       "constructor_assignment": null,
@@ -7844,8 +7808,8 @@
   "counts": {
     "build_targets": 2,
     "files": 359,
-    "routes": 184,
-    "configuration_properties": 532,
+    "routes": 178,
+    "configuration_properties": 533,
     "storage_references": 69,
     "scheduled_tasks": 13,
     "locales": 33

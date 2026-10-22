@@ -49,7 +49,7 @@ namespace Jellyfin.Plugin.JellyfinEnhanced.Services
                 return;
             }
 
-            if (!config.AutoSeasonRequestEnabled || !config.JellyseerrEnabled)
+            if (!config.AutoSeasonRequestEnabled || !config.RequestProviderEnabled())
             {
                 _logger.Info("[Auto-Season-Request] Auto-request monitoring is disabled in configuration - not subscribing to playback events");
                 return;
@@ -81,7 +81,7 @@ namespace Jellyfin.Plugin.JellyfinEnhanced.Services
                     return;
                 }
 
-                if (!config.JellyseerrEnabled)
+                if (!config.RequestProviderEnabled())
                 {
                     return;
                 }
@@ -159,7 +159,7 @@ namespace Jellyfin.Plugin.JellyfinEnhanced.Services
             {
                 // Check if auto-season-request is enabled
                 var config = JellyfinEnhanced.Instance?.Configuration;
-                if (config == null || !config.AutoSeasonRequestEnabled || !config.JellyseerrEnabled)
+                if (config == null || !config.AutoSeasonRequestEnabled || !config.RequestProviderEnabled())
                 {
                     return;
                 }

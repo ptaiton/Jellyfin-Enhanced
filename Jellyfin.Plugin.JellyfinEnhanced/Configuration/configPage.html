@@ -1926,7 +1926,8 @@
                         <legend class="sectionTitle">MediaForge</legend>
                         <div class="checkboxContainer"><label><input id="mediaForgeEnabled" is="emby-checkbox" type="checkbox"/><span>Enable MediaForge</span></label></div>
                         <div class="inputContainer"><label class="inputLabel" for="mediaForgeUrl">MediaForge server URL</label><input id="mediaForgeUrl" is="emby-input" type="url" class="emby-input" placeholder="http://mediaforge:8080"/></div>
-                        <div class="fieldDescription">Address reachable from the Jellyfin server, including any base path. Uses the current Jellyfin session automatically. Import and enable the matching Jellyfin accounts in MediaForge. HTTPS is recommended between servers.</div>
+                        <div class="inputContainer"><label class="inputLabel" for="mediaForgeIntegrationKey">MediaForge background integration key</label><input id="mediaForgeIntegrationKey" is="emby-input" type="password" class="emby-input" autocomplete="off"/></div>
+                        <div class="fieldDescription">For automatic next-season/movie requests and watchlist synchronization, use the JELLYFIN_ENHANCED_KEY configured on MediaForge. Browser requests use the current Jellyfin session. Address reachable from the Jellyfin server, including any base path. Replaces Seerr as the provider for Enhanced search results, media details, request buttons and tracking. Uses your current Jellyfin session automatically. Import and enable matching Jellyfin accounts in MediaForge.</div>
                     </fieldset>
                     <fieldset data-dep-setup>
                         <legend class="sectionTitle">Seerr Connection Setup</legend>
@@ -6601,6 +6602,7 @@
                 document.querySelector('#showUserRatingOnPosters').checked = config.ShowUserRatingOnPosters === true;
                 document.querySelector('#mediaForgeEnabled').checked = config.MediaForgeEnabled === true;
                 document.querySelector('#mediaForgeUrl').value = config.MediaForgeUrl || '';
+                document.querySelector('#mediaForgeIntegrationKey').value = config.MediaForgeIntegrationKey || '';
                 document.querySelector('#jellyseerrEnabled').checked = config.JellyseerrEnabled;
                 document.querySelector('#showCollectionsInSearch').checked = config.ShowCollectionsInSearch !== false;
                 document.querySelector('#jellyseerrShowSearchResults').checked = config.JellyseerrShowSearchResults !== false;
@@ -7178,6 +7180,7 @@
             config.ShowUserRatingOnPosters = document.querySelector('#showUserRatingOnPosters').checked;
             config.MediaForgeEnabled = document.querySelector('#mediaForgeEnabled').checked;
             config.MediaForgeUrl = document.querySelector('#mediaForgeUrl').value.trim();
+            config.MediaForgeIntegrationKey = document.querySelector('#mediaForgeIntegrationKey').value.trim();
             config.JellyseerrEnabled = document.querySelector('#jellyseerrEnabled').checked;
             config.JellyseerrShowSearchResults = document.querySelector('#jellyseerrShowSearchResults').checked;
             config.JellyseerrSearchExcludeLibraryItems = document.querySelector('#jellyseerrSearchExcludeLibraryItems').checked;

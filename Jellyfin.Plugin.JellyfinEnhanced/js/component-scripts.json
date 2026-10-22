@@ -25,7 +25,7 @@
     "enhanced/config.js",
     "enhanced/helpers.js",
     "enhanced/header-actions.js",
-    "enhanced/mediaforge.js",
+    "enhanced/mediaforge-provider.js",
     "enhanced/native-tabs.js",
     "tags/tag-cache-store.js",
     "tags/tag-pipeline.js",

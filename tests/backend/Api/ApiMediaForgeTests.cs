@@ -1,88 +1,58 @@
+using System.Security.Claims;
 using Jellyfin.Plugin.JellyfinEnhanced.Controllers;
-using Microsoft.AspNetCore.Authorization;
+using Jellyfin.Plugin.JellyfinEnhanced.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.AspNetCore.Routing;
 
 namespace JE.Tests;
-
 [Collection("Plugin singleton")]
 public class ApiMediaForgeTests
 {
-    private static MediaForgeController Controller() => new()
+    private static ResourceExecutingContext Context(string path, bool signedIn=true)
     {
-        ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
-    };
-
-    [Fact]
-    public void AllRoutesRequireJellyfinAuthentication()
-    {
-        Assert.NotEmpty(typeof(MediaForgeController).GetCustomAttributes(typeof(AuthorizeAttribute), true));
-        Assert.DoesNotContain(typeof(MediaForgeController).GetMethods(), m => m.GetCustomAttributes(typeof(AllowAnonymousAttribute), true).Length > 0);
-    }
-
-    [Theory]
-    [InlineData("file:///etc/passwd")]
-    [InlineData("https://user:password@mediaforge.test")]
-    [InlineData("https://mediaforge.test?token=secret")]
-    [InlineData("https://mediaforge.test/#fragment")]
-    public async Task InvalidServerAddressesFailClosed(string url)
-    {
-        using var fixture = new ApiPluginFixture();
-        fixture.Plugin.Configuration.MediaForgeEnabled = true;
-        fixture.Plugin.Configuration.MediaForgeUrl = url;
-        var result = Assert.IsType<ObjectResult>(await Controller().Defaults());
-        Assert.Equal(503, result.StatusCode);
-    }
-
-    [Theory]
-    [InlineData("")]
-    [InlineData(null)]
-
-    public async Task MissingOrMalformedSessionsAreRejectedBeforeUpstream(string? session)
-    {
-        using var fixture = new ApiPluginFixture();
-        fixture.Plugin.Configuration.MediaForgeEnabled = true;
-        fixture.Plugin.Configuration.MediaForgeUrl = "http://127.0.0.1:1";
-        var controller = Controller();
-        controller.Request.Headers["X-Emby-Token"] = session;
-        Assert.IsType<UnauthorizedObjectResult>(await controller.Defaults());
-    }
-
-    [Theory]
-    [InlineData("episode", 10)]
-    [InlineData("movie", 0)]
-    [InlineData("tv", -1)]
-    public async Task InvalidDetailTargetsAreRejected(string format, long id)
-    {
-        Assert.IsType<BadRequestResult>(await Controller().Details(format, id));
+        var http=new DefaultHttpContext();http.Request.Path=path;http.Request.Method="GET";
+        if(signedIn)http.User=new ClaimsPrincipal(new ClaimsIdentity(new[]{new Claim(ClaimTypes.NameIdentifier,Guid.NewGuid().ToString())},"test"));
+        return new ResourceExecutingContext(new ActionContext(http,new RouteData(),new Microsoft.AspNetCore.Mvc.Abstractions.ActionDescriptor()),new List<IFilterMetadata>(),new List<IValueProviderFactory>());
     }
     [Fact]
-    public async Task ProxyForwardsCurrentJellyfinSessionToFixedMediaForgeRoute()
+    public async Task MediaForgeReusesOriginalSeerrRoutesWithoutExposingAPanel()
     {
-        using var fixture = new ApiPluginFixture();
-        var portProbe = new System.Net.Sockets.TcpListener(System.Net.IPAddress.Loopback, 0);
-        portProbe.Start();
-        var port = ((System.Net.IPEndPoint)portProbe.LocalEndpoint).Port;
-        portProbe.Stop();
-        using var listener = new System.Net.HttpListener();
-        listener.Prefixes.Add($"http://127.0.0.1:{port}/");
-        listener.Start();
-        fixture.Plugin.Configuration.MediaForgeEnabled = true;
-        fixture.Plugin.Configuration.MediaForgeUrl = $"http://127.0.0.1:{port}/base";
-        var controller = Controller();
-        controller.Request.Headers["X-Emby-Token"] = "personal-jellyfin-token";
-        controller.Request.Headers["Cookie"] = "unrelated=cookie";
-        var pending = controller.Search("A & B");
-        var upstream = await listener.GetContextAsync().WaitAsync(TimeSpan.FromSeconds(10));
-        Assert.Equal("personal-jellyfin-token", upstream.Request.Headers["X-MediaForge-Jellyfin-Token"]);
-        Assert.Null(upstream.Request.Headers["X-Emby-Token"]);
-        Assert.Null(upstream.Request.Headers["Cookie"]);
-        Assert.Equal("/base/api/discover/search", upstream.Request.Url!.AbsolutePath);
-        Assert.Equal("A & B", upstream.Request.QueryString["q"]);
-        var bytes = System.Text.Encoding.UTF8.GetBytes("[]");
-        upstream.Response.ContentLength64 = bytes.Length;
-        await upstream.Response.OutputStream.WriteAsync(bytes);
-        upstream.Response.Close();
-        Assert.Equal("[]", Assert.IsType<ContentResult>(await pending).Content);
+        using var fixture=new ApiPluginFixture();fixture.Plugin.Configuration.MediaForgeEnabled=true;
+        var probe=new System.Net.Sockets.TcpListener(System.Net.IPAddress.Loopback,0);probe.Start();var port=((System.Net.IPEndPoint)probe.LocalEndpoint).Port;probe.Stop();
+        using var listener=new System.Net.HttpListener();listener.Prefixes.Add($"http://127.0.0.1:{port}/");listener.Start();
+        fixture.Plugin.Configuration.MediaForgeUrl=$"http://127.0.0.1:{port}/base";
+        var context=Context("/JellyfinEnhanced/jellyseerr/search");context.HttpContext.Request.QueryString=new QueryString("?query=Dune&page=2");context.HttpContext.Request.Headers["X-Emby-Token"]="personal-session";
+        var pending=new MediaForgeProviderFilter().OnResourceExecutionAsync(context,()=>throw new Exception("Must not contact Seerr"));
+        var received=await listener.GetContextAsync().WaitAsync(TimeSpan.FromSeconds(10));
+        Assert.Equal("/base/api/integrations/jellyfin-enhanced/jellyseerr/search",received.Request.Url!.AbsolutePath);
+        Assert.Equal("Dune",received.Request.QueryString["query"]);
+        Assert.Equal("2",received.Request.QueryString["page"]);
+        Assert.Equal("personal-session",received.Request.Headers["X-MediaForge-Jellyfin-Token"]);
+        Assert.Null(received.Request.Headers["Cookie"]);
+        var bytes=System.Text.Encoding.UTF8.GetBytes("{\"results\":[]}");received.Response.ContentLength64=bytes.Length;await received.Response.OutputStream.WriteAsync(bytes);received.Response.Close();await pending;
+        Assert.Equal(200,Assert.IsType<ContentResult>(context.Result).StatusCode);
+    }
+    [Theory]
+    [InlineData("/JellyfinEnhanced/jellyseerr/search")]
+    [InlineData("/JellyfinEnhanced/arr/queue")]
+    public async Task NativeProviderRequiresAnAuthenticatedPersonalSession(string path)
+    {
+        using var fixture=new ApiPluginFixture();fixture.Plugin.Configuration.MediaForgeEnabled=true;
+        foreach(var authenticated in new[]{false,true}){
+            var context=Context(path,authenticated);
+            await new MediaForgeProviderFilter().OnResourceExecutionAsync(context,()=>throw new Exception("Must reject"));
+            Assert.IsType<UnauthorizedResult>(context.Result);
+        }
+    }
+    [Fact]
+    public async Task DisabledProviderLeavesSeerrAndOtherEndpointsUntouched()
+    {
+        using var fixture=new ApiPluginFixture();fixture.Plugin.Configuration.MediaForgeEnabled=false;
+        var context=Context("/JellyfinEnhanced/jellyseerr/search");var called=false;
+        await new MediaForgeProviderFilter().OnResourceExecutionAsync(context,()=>{called=true;return Task.FromResult(new ResourceExecutedContext(context,new List<IFilterMetadata>()));});
+        Assert.True(called);
     }
 }

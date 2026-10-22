@@ -16,6 +16,10 @@ namespace Jellyfin.Plugin.JellyfinEnhanced.Configuration
     {
         public bool MediaForgeEnabled { get; set; } = false;
         public string MediaForgeUrl { get; set; } = string.Empty;
+        public string MediaForgeIntegrationKey { get; set; } = string.Empty;
+        public bool RequestProviderEnabled() => MediaForgeEnabled || JellyseerrEnabled;
+        public string RequestProviderUrls() => MediaForgeEnabled ? MediaForgeUrl : JellyseerrUrls;
+        public string RequestProviderKey() => MediaForgeEnabled ? MediaForgeIntegrationKey : JellyseerrApiKey;
 
         public PluginConfiguration()
         {

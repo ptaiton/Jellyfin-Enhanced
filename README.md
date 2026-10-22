@@ -1,4 +1,4 @@
-> **MediaForge fork:** Adds a personal MediaForge request panel to the Jellyfin header. [Setup, capabilities and build instructions](docs/integrations/mediaforge.md).
+> **MediaForge fork:** Uses MediaForge in Enhanced’s native Jellyfin search, media details, requests and tracking. [Setup, capabilities and build instructions](docs/integrations/mediaforge.md).
 
 <p align="center">
   <img src="docs/images/icon.png" alt="Jellyfin Enhanced" width="380">

@@ -1000,6 +1000,7 @@
      * @returns {string} - The resolved Seerr base URL (without trailing slash), or empty string if none configured.
      */
     api.resolveJellyseerrBaseUrl = function() {
+        if (JE.pluginConfig?.MediaForgeEnabled) return '';
         let baseUrl = '';
 
         // Check if URL mappings are configured
