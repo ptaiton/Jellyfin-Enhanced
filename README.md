@@ -1,3 +1,5 @@
+> **MediaForge fork:** Adds a personal MediaForge request panel to the Jellyfin header. [Setup, capabilities and build instructions](docs/integrations/mediaforge.md).
+
 <p align="center">
   <img src="docs/images/icon.png" alt="Jellyfin Enhanced" width="380">
 </p>

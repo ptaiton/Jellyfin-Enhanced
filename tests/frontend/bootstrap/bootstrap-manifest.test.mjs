@@ -36,6 +36,10 @@ test('every manifest module loads in bundle order without load-time errors', asy
   assert.ok(manifest.length > 100);
   const cdnUrl = (source, path) => `http://jellyfin.test/JellyfinEnhanced/cdn/${source}/${path}`;
   const h = createHarness({
+    fetch: async url => {
+      assert.ok(String(url).endsWith('/JellyfinEnhanced/mediaforge/config'), `unexpected startup request: ${url}`);
+      return { ok: true, json: async () => ({ enabled: false }) };
+    },
     JE: {
       pluginConfig: {}, userConfig: {}, translations: {}, currentSettings: {}, state: { activeShortcuts: {} },
       t: key => key, icon: () => '', IconName: {}, escapeHtml: value => String(value ?? ''),

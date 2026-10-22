@@ -1922,6 +1922,12 @@
                 </div>
 
                 <div id="seerr" class="jellyfin-tab-content">
+                    <fieldset>
+                        <legend class="sectionTitle">MediaForge</legend>
+                        <div class="checkboxContainer"><label><input id="mediaForgeEnabled" is="emby-checkbox" type="checkbox"/><span>Enable MediaForge</span></label></div>
+                        <div class="inputContainer"><label class="inputLabel" for="mediaForgeUrl">MediaForge server URL</label><input id="mediaForgeUrl" is="emby-input" type="url" class="emby-input" placeholder="http://mediaforge:8080"/></div>
+                        <div class="fieldDescription">Address reachable from the Jellyfin server, including any base path. Users sign in to their own MediaForge account from the MediaForge header button. Passwords are never saved in plugin settings. HTTPS is recommended between servers.</div>
+                    </fieldset>
                     <fieldset data-dep-setup>
                         <legend class="sectionTitle">Seerr Connection Setup</legend>
                         <div class="configSection">
@@ -6593,6 +6599,8 @@
                 document.querySelector('#mirrorReviewRatingsToJellyfin').checked = config.MirrorReviewRatingsToJellyfin === true;
                 document.querySelector('#showUserRatingDash').checked = config.ShowUserRatingDash !== false;
                 document.querySelector('#showUserRatingOnPosters').checked = config.ShowUserRatingOnPosters === true;
+                document.querySelector('#mediaForgeEnabled').checked = config.MediaForgeEnabled === true;
+                document.querySelector('#mediaForgeUrl').value = config.MediaForgeUrl || '';
                 document.querySelector('#jellyseerrEnabled').checked = config.JellyseerrEnabled;
                 document.querySelector('#showCollectionsInSearch').checked = config.ShowCollectionsInSearch !== false;
                 document.querySelector('#jellyseerrShowSearchResults').checked = config.JellyseerrShowSearchResults !== false;
@@ -7168,6 +7176,8 @@
             config.MirrorReviewRatingsToJellyfin = document.querySelector('#mirrorReviewRatingsToJellyfin').checked;
             config.ShowUserRatingDash = document.querySelector('#showUserRatingDash').checked;
             config.ShowUserRatingOnPosters = document.querySelector('#showUserRatingOnPosters').checked;
+            config.MediaForgeEnabled = document.querySelector('#mediaForgeEnabled').checked;
+            config.MediaForgeUrl = document.querySelector('#mediaForgeUrl').value.trim();
             config.JellyseerrEnabled = document.querySelector('#jellyseerrEnabled').checked;
             config.JellyseerrShowSearchResults = document.querySelector('#jellyseerrShowSearchResults').checked;
             config.JellyseerrSearchExcludeLibraryItems = document.querySelector('#jellyseerrSearchExcludeLibraryItems').checked;

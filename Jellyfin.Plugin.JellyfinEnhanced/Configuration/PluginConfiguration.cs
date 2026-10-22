@@ -14,6 +14,9 @@ namespace Jellyfin.Plugin.JellyfinEnhanced.Configuration
     }
     public class PluginConfiguration : BasePluginConfiguration
     {
+        public bool MediaForgeEnabled { get; set; } = false;
+        public string MediaForgeUrl { get; set; } = string.Empty;
+
         public PluginConfiguration()
         {
             // Jellyfin Enhanced Settings
