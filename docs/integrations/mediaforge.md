@@ -5,7 +5,7 @@ MediaForge replaces Seerr as the request/discovery provider inside Enhanced. The
 ## Setup
 
 1. Update MediaForge to the native Enhanced adapter build and install this fork's DLL for your Jellyfin version (`jf10` for 10.11; `jf12` for 12).
-2. In Enhanced's Seerr settings tab, enable **MediaForge** and enter its server URL reachable from Jellyfin, including any base path. Selecting MediaForge routes the existing Enhanced components to MediaForge; Seerr is no longer contacted for those views.
+2. In Enhanced's MediaForge settings tab, enable **MediaForge** and enter its server URL reachable from Jellyfin, including any base path. Selecting MediaForge routes the existing Enhanced components to MediaForge; Seerr is no longer contacted for those views.
 3. Import and enable the matching Jellyfin accounts in MediaForge. Its configured Jellyfin URL must point to this server. Users reuse their current Jellyfin session, with no second login.
 4. Enable the normal Enhanced features you want: search results, More Info modals, Recommendations, Requests and Calendar. Their existing per-user preferences continue to apply.
 5. For automatic next-season/movie requests and watchlist synchronization, generate a dedicated random secret, set `JELLYFIN_ENHANCED_KEY` on MediaForge, and paste the same value into **MediaForge background integration key** in the plugin settings. Browser requests do not use this key. Keep existing automatic-request feature switches as desired.

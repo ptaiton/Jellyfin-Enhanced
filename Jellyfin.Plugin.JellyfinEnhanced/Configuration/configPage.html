@@ -78,6 +78,7 @@
                 <button class="jellyfin-tab-button" data-tab="display"><h3><i class="material-icons je-tab-icon" aria-hidden="true">palette</i>Display</h3></button>
                 <button class="jellyfin-tab-button" data-tab="playback"><h3><i class="material-icons je-tab-icon" aria-hidden="true">play_circle</i>Playback</h3></button>
                 <button class="jellyfin-tab-button" data-tab="pages"><h3><i class="material-icons je-tab-icon" aria-hidden="true">view_list</i>Pages</h3></button>
+                <button class="jellyfin-tab-button" data-tab="mediaforge"><h3><i class="material-icons je-tab-icon" aria-hidden="true">movie</i>MediaForge</h3></button>
                 <button class="jellyfin-tab-button" data-tab="seerr"><h3><img data-je-cdn="selfhst/svg/seerr.svg" alt="" class="je-tab-icon-img">Seerr</h3></button>
                 <button class="jellyfin-tab-button" data-tab="arr"><h3><i class="material-icons je-tab-icon" aria-hidden="true">dns</i>*arr</h3></button>
                 <button class="jellyfin-tab-button" data-tab="elsewhere"><h3><i class="material-icons je-tab-icon" aria-hidden="true">travel_explore</i>Elsewhere &amp; Reviews</h3></button>
@@ -1921,7 +1922,7 @@
                     </fieldset>
                 </div>
 
-                <div id="seerr" class="jellyfin-tab-content">
+                <div id="mediaforge" class="jellyfin-tab-content">
                     <fieldset>
                         <legend class="sectionTitle">MediaForge</legend>
                         <div class="checkboxContainer"><label><input id="mediaForgeEnabled" is="emby-checkbox" type="checkbox"/><span>Enable MediaForge</span></label></div>
@@ -1929,6 +1930,9 @@
                         <div class="inputContainer"><label class="inputLabel" for="mediaForgeIntegrationKey">MediaForge background integration key</label><input id="mediaForgeIntegrationKey" is="emby-input" type="password" class="emby-input" autocomplete="off"/></div>
                         <div class="fieldDescription">For automatic next-season/movie requests and watchlist synchronization, use the JELLYFIN_ENHANCED_KEY configured on MediaForge. Browser requests use the current Jellyfin session. Address reachable from the Jellyfin server, including any base path. Replaces Seerr as the provider for Enhanced search results, media details, request buttons and tracking. Uses your current Jellyfin session automatically. Import and enable matching Jellyfin accounts in MediaForge.</div>
                     </fieldset>
+                </div>
+
+                <div id="seerr" class="jellyfin-tab-content">
                     <fieldset data-dep-setup>
                         <legend class="sectionTitle">Seerr Connection Setup</legend>
                         <div class="configSection">
